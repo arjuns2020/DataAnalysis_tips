@@ -1,0 +1,59 @@
+# capture the target
+y_train = X_train['SalePrice']
+y_test = X_test['SalePrice']
+
+
+features = pd.read_csv('selected_features.csv', header=None)
+features = [x for x in features[0]] 
+
+# reduce the train and test set to the desired features
+
+X_train = X_train[features]
+X_test = X_test[features]
+
+# train the model
+lin_model = Lasso(alpha=0.005, random_state=0) # remember to set the random_state / seed
+lin_model.fit(X_train, y_train)
+
+
+# evaluate the model:
+# remember that we log transformed the output (SalePrice) in our feature engineering notebook / lecture.
+
+# In order to get the true performance of the Lasso
+# we need to transform both the target and the predictions
+# back to the original house prices values.
+
+# We will evaluate performance using the mean squared error and the
+# root of the mean squared error
+
+pred = lin_model.predict(X_train)
+print('linear train mse: {}'.format(mean_squared_error(np.exp(y_train), np.exp(pred))))
+print('linear train rmse: {}'.format(sqrt(mean_squared_error(np.exp(y_train), np.exp(pred)))))
+print()
+pred = lin_model.predict(X_test)
+print('linear test mse: {}'.format(mean_squared_error(np.exp(y_test), np.exp(pred))))
+print('linear test rmse: {}'.format(sqrt(mean_squared_error(np.exp(y_test), np.exp(pred)))))
+print()
+print('Average house price: ', np.exp(y_train).median())
+
+
+# let's evaluate our predictions respect to the original price
+plt.scatter(y_test, lin_model.predict(X_test))
+plt.xlabel('True House Price')
+plt.ylabel('Predicted House Price')
+plt.title('Evaluation of Lasso Predictions')
+
+# let's evaluate the distribution of the errors: 
+# they should be fairly normally distributed
+
+errors = y_test - lin_model.predict(X_test)
+errors.hist(bins=15)
+
+# Finally, just for fun, let's look at the feature importance
+
+importance = pd.Series(np.abs(lin_model.coef_.ravel()))
+importance.index = features
+importance.sort_values(inplace=True, ascending=False)
+importance.plot.bar(figsize=(18,6))
+plt.ylabel('Lasso Coefficients')
+plt.title('Feature Importance')
