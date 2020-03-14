@@ -1,0 +1,161 @@
+
+ 
+####### list of numerical variables
+num_vars = [var for var in data.columns if data[var].dtypes != 'O']
+
+print('Number of numerical variables: ', len(num_vars))
+
+# visualise the numerical variables
+data[num_vars].head()
+______________________________________________________________________________________________________________________________
+####################################### year variables ############################################################
+# list of variables that contain year information
+year_vars = [var for var in num_vars if 'Yr' in var or 'Year' in var]
+
+year_vars
+
+### year analysis
+# let's explore the content of these year variables
+for var in year_vars:
+    print(var, data[var].unique())
+    print()
+	
+# analysis with target variables
+data.groupby('YrSold')['SalePrice'].median().plot()
+plt.ylabel('Median House Price')
+plt.title('Change in House price with the years')
+
+# analyse all year variables ( Plots)
+# let's explore the relationship between the year variables and the house price in a bit of more details
+def analyse_year_vars(df, var):
+    df = df.copy()
+    
+    # capture difference between year variable and year the house was sold
+    df[var] = df['YrSold'] - df[var]
+    
+    plt.scatter(df[var], df['SalePrice'])
+    plt.ylabel('SalePrice')
+    plt.xlabel(var)
+    plt.show()
+    
+for var in year_vars:
+    if var !='YrSold':
+        analyse_year_vars(data, var)
+
+______________________________________________________________________________________________________________________________
+
+################################# Descrete data analysis########################################################
+
+#  list of discrete variables
+discrete_vars = [var for var in num_vars if len(data[var].unique())<20 and var not in year_vars+['Id']]
+
+print('Number of discrete variables: ', len(discrete_vars))
+
+
+#### descrete var vs target analysis
+def analyse_discrete(df, var):
+    df = df.copy()
+    df.groupby(var)['SalePrice'].median().plot.bar()
+    plt.title(var)
+    plt.ylabel('SalePrice')
+    plt.show()
+    
+for var in discrete_vars:
+    analyse_discrete(data, var)
+	
+##################################### cont var ########################################################
+
+# list of continuous variables
+cont_vars = [var for var in num_vars if var not in discrete_vars+year_vars+['Id']]
+
+print('Number of continuous variables: ', len(cont_vars))
+
+# Let's go ahead and analyse the distributions of these variables
+def analyse_continous(df, var):
+    df = df.copy()
+    df[var].hist(bins=20)
+    plt.ylabel('Number of houses')
+    plt.xlabel(var)
+    plt.title(var)
+    plt.show()
+    
+for var in cont_vars:
+    analyse_continous(data, var)
+	
+########### We see that all of the above variables, are not normally distributed #########
+
+############################# TRANSFORM CONT VAR ##############################3
+
+# Let's go ahead and analyse the distributions of these variables
+def analyse_transformed_continous(df, var):
+    df = df.copy()
+    
+    # log does not take negative values, so let's be careful and skip those variables
+    if 0 in data[var].unique():
+        pass
+    else:
+        # log transform the variable
+        df[var] = np.log(df[var])
+        df[var].hist(bins=20)
+        plt.ylabel('Number of houses')
+        plt.xlabel(var)
+        plt.title(var)
+        plt.show()
+    
+for var in cont_vars:
+    analyse_transformed_continous(data, var)
+
+
+########### bOX PLOTS FOR OUTLIER ANALYSIS ########################
+
+# let's make boxplots to visualise outliers in the continuous variables 
+
+def find_outliers(df, var):
+    df = df.copy()
+    
+    # log does not take negative values, so let's be careful and skip those variables
+    if 0 in data[var].unique():
+        pass
+    else:
+        df[var] = np.log(df[var])
+        df.boxplot(column=var)
+        plt.title(var)
+        plt.ylabel(var)
+        plt.show()
+    
+for var in cont_vars:
+    find_outliers(data, var)
+	
+### Categorical variables
+
+### Categorical variables
+
+cat_vars = [var for var in data.columns if data[var].dtypes=='O']
+
+print('Number of categorical variables: ', len(cat_vars))
+
+for var in cat_vars:
+    print(var, len(data[var].unique()), ' categories')
+	
+def analyse_rare_labels(df, var, rare_perc):
+    df = df.copy()
+    tmp = df.groupby(var)['SalePrice'].count() / len(df)
+    return tmp[tmp<rare_perc]
+
+###############################################################
+
+for var in cat_vars:
+    print(analyse_rare_labels(data, var, 0.01))
+    print()
+
+
+#### descrete var vs target analysis
+def analyse_discrete(df, var):
+    df = df.copy()
+    df.groupby(var)['SalePrice'].median().plot.bar()
+    plt.title(var)
+    plt.ylabel('SalePrice')
+    plt.show()
+    
+for var in cat_vars:
+    analyse_discrete(data, var)
